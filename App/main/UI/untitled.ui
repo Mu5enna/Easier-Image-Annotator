@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>800</width>
+    <height>600</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QGridLayout" name="gridLayout_2">
+    <item row="1" column="4">
+     <widget class="QPushButton" name="pushButton_Delete">
+      <property name="text">
+       <string>Delete</string>
+      </property>
+      <property name="checkable">
+       <bool>false</bool>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="3">
+     <widget class="QPushButton" name="pushButton_Save">
+      <property name="text">
+       <string>Save</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="2">
+     <spacer name="horizontalSpacer_2">
+      <property name="orientation">
+       <enum>Qt::Orientation::Horizontal</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>40</width>
+        <height>20</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
+    <item row="0" column="0" colspan="5">
+     <widget class="QGroupBox" name="groupBox">
+      <property name="title">
+       <string>Easier Image Annotator</string>
+      </property>
+      <layout class="QGridLayout" name="gridLayout">
+       <item row="1" column="0" rowspan="3">
+        <widget class="QListWidget" name="listWidget_Frames">
+         <property name="maximumSize">
+          <size>
+           <width>151</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <property name="contextMenuPolicy">
+          <enum>Qt::ContextMenuPolicy::CustomContextMenu</enum>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="2" colspan="2">
+        <widget class="QListWidget" name="listWidget_AddedClasses">
+         <property name="maximumSize">
+          <size>
+           <width>151</width>
+           <height>16777215</height>
+          </size>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="2">
+        <widget class="QSpinBox" name="spinBox_TrackId">
+         <property name="font">
+          <font>
+           <pointsize>16</pointsize>
+          </font>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1" rowspan="4">
+        <widget class="QGraphicsView" name="graphicsView">
+         <property name="acceptDrops">
+          <bool>false</bool>
+         </property>
+         <property name="sizeAdjustPolicy">
+          <enum>QAbstractScrollArea::SizeAdjustPolicy::AdjustToContents</enum>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="2" colspan="2">
+        <widget class="QComboBox" name="comboBox_Classes"/>
+       </item>
+       <item row="0" column="2" colspan="2">
+        <widget class="QPushButton" name="pushButton_AddClass">
+         <property name="text">
+          <string>Add Class</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="0">
+        <widget class="QPushButton" name="pushButton_AddFrame">
+         <property name="maximumSize">
+          <size>
+           <width>151</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select the folder of your frames&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="whatsThis">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="text">
+          <string>Add Frame</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="3">
+        <widget class="QPushButton" name="pushButton_AddTrackId">
+         <property name="font">
+          <font>
+           <pointsize>16</pointsize>
+          </font>
+         </property>
+         <property name="text">
+          <string>Add</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item row="1" column="1">
+     <widget class="QPushButton" name="pushButton_Fill">
+      <property name="text">
+       <string>Fill</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="0">
+     <widget class="QLineEdit" name="lineEdit_SingleTrackId">
+      <property name="maximumSize">
+       <size>
+        <width>133</width>
+        <height>16777215</height>
+       </size>
+      </property>
+     </widget>
+    </item>
+   </layout>
+   <zorder>groupBox</zorder>
+   <zorder>pushButton_Delete</zorder>
+   <zorder>pushButton_Save</zorder>
+   <zorder>horizontalSpacer_2</zorder>
+   <zorder>pushButton_Fill</zorder>
+   <zorder>lineEdit_SingleTrackId</zorder>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
