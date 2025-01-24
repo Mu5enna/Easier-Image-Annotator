@@ -1,16 +1,16 @@
+import math
 import os
 import sys
 from pathlib import Path
-
-from App.main.UI.mainWindow import Ui_MainWindow
-
-#----------------------------------------------------------------------------------------------------------------------#
-imagePaths={}
 
 from PySide6 import QtCore as qtc
 from PySide6 import QtGui as qtg
 from PySide6 import QtWidgets as qtw
 
+from App.main.UI.mainWindow import Ui_MainWindow
+
+#----------------------------------------------------------------------------------------------------------------------#
+imagePaths={}
 
 class ResizableRectItem(qtw.QGraphicsRectItem):
     def __init__(self, rect, parent=None):
@@ -21,7 +21,7 @@ class ResizableRectItem(qtw.QGraphicsRectItem):
             qtw.QGraphicsItem.ItemSendsGeometryChanges
         )
         self.setAcceptHoverEvents(True)
-        self.setPen(qtg.QPen(qtg.Qt.red, 2))
+        self.setPen(qtg.QPen(qtg.Qt.red, 3))
         self.setBrush(qtg.QBrush(qtg.Qt.transparent))
 
         self.is_resizing = False  # Boyutlandırma modunu takip et
@@ -32,19 +32,41 @@ class ResizableRectItem(qtw.QGraphicsRectItem):
         rect = self.rect()
         pos = event.pos()
 
-        buffer = 10  # Kenar algılama mesafesi
-        if abs(pos.x() - rect.left()) < buffer:
-            cursor = qtg.Qt.SizeHorCursor
+        buffer = 10  # Kenar veya köşe algılama mesafesi
+        left, top, right, bottom = rect.left(), rect.top(), rect.right(), rect.bottom()
+
+        if not self.isSelected():
+            cursor = qtg.Qt.ArrowCursor
+            self.setCursor(cursor)
+            return
+        # Öncelik köşe algılamasında
+        if abs(pos.x() - left) < buffer and abs(pos.y() - top) < buffer:
+            cursor = qtg.Qt.SizeFDiagCursor  # Sol üst köşe
+            self.resize_dir = "top_left"
+        elif abs(pos.x() - right) < buffer and abs(pos.y() - top) < buffer:
+            cursor = qtg.Qt.SizeBDiagCursor  # Sağ üst köşe
+            self.resize_dir = "top_right"
+        elif abs(pos.x() - left) < buffer and abs(pos.y() - bottom) < buffer:
+            cursor = qtg.Qt.SizeBDiagCursor  # Sol alt köşe
+            self.resize_dir = "bottom_left"
+        elif abs(pos.x() - right) < buffer and abs(pos.y() - bottom) < buffer:
+            cursor = qtg.Qt.SizeFDiagCursor  # Sağ alt köşe
+            self.resize_dir = "bottom_right"
+        elif abs(pos.x() - left) < buffer:
+            cursor = qtg.Qt.SizeHorCursor  # Sol kenar
             self.resize_dir = "left"
-        elif abs(pos.x() - rect.right()) < buffer:
-            cursor = qtg.Qt.SizeHorCursor
+        elif abs(pos.x() - right) < buffer:
+            cursor = qtg.Qt.SizeHorCursor  # Sağ kenar
             self.resize_dir = "right"
-        elif abs(pos.y() - rect.top()) < buffer:
-            cursor = qtg.Qt.SizeVerCursor
+        elif abs(pos.y() - top) < buffer:
+            cursor = qtg.Qt.SizeVerCursor  # Üst kenar
             self.resize_dir = "top"
-        elif abs(pos.y() - rect.bottom()) < buffer:
-            cursor = qtg.Qt.SizeVerCursor
+        elif abs(pos.y() - bottom) < buffer:
+            cursor = qtg.Qt.SizeVerCursor  # Alt kenar
             self.resize_dir = "bottom"
+        elif rect.contains(pos):
+            cursor = qtg.Qt.SizeAllCursor  # İçeride hareket ikonu
+            self.resize_dir = None
         else:
             self.resize_dir = None
 
@@ -52,16 +74,19 @@ class ResizableRectItem(qtw.QGraphicsRectItem):
         super().hoverMoveEvent(event)
 
     def mousePressEvent(self, event):
+        self.start_pos = event.pos()  # Başlangıç pozisyonunu kaydet
         # Eğer bir kenar algılandıysa boyutlandırma başlat
-        if self.resize_dir:
-            self.is_resizing = True
-            self.original_rect = self.rect()
-        else:
-            self.is_resizing = False
-        super().mousePressEvent(event)
+        if self.isSelected():  # Sadece seçili öğelerde işlem yapılır
+            if self.resize_dir:
+                self.is_resizing = True
+                self.original_rect = self.rect()
+            else:
+                self.is_resizing = False
+        # Seçim işlemini engellemek için varsayılan davranışı iptal edelim
+        event.accept()
 
     def mouseMoveEvent(self, event):
-        if self.is_resizing and self.resize_dir:
+        if self.isSelected() and self.is_resizing and self.resize_dir:  # Seçili öğeye göre kontrol
             delta = event.scenePos() - event.lastScenePos()
             rect = self.rect()
 
@@ -73,14 +98,34 @@ class ResizableRectItem(qtw.QGraphicsRectItem):
                 rect.setTop(rect.top() + delta.y())
             elif self.resize_dir == "bottom":
                 rect.setBottom(rect.bottom() + delta.y())
+            elif self.resize_dir == "top_left":
+                rect.setLeft(rect.left() + delta.x())
+                rect.setTop(rect.top() + delta.y())
+            elif self.resize_dir == "top_right":
+                rect.setRight(rect.right() + delta.x())
+                rect.setTop(rect.top() + delta.y())
+            elif self.resize_dir == "bottom_left":
+                rect.setLeft(rect.left() + delta.x())
+                rect.setBottom(rect.bottom() + delta.y())
+            elif self.resize_dir == "bottom_right":
+                rect.setRight(rect.right() + delta.x())
+                rect.setBottom(rect.bottom() + delta.y())
 
             self.setRect(rect)
+        elif self.isSelected():  # Seçiliyse hareket ettir
+            super().mouseMoveEvent(event)  # Hareket ettirmek için QGraphicsItem default davranış çalışır
         else:
-            super().mouseMoveEvent(event)
+            return  # Seçili değilse hiçbir işlem yapılmasın
 
     def mouseReleaseEvent(self, event):
-        self.is_resizing = False
+        # İşlem bittikten sonra boyutlandırma durdurulmalı
+        if self.isSelected():
+            self.is_resizing = False
+        # Seçim işlemini burada gerçekleştirelim
+        if self.resize_dir is None:
+            self.setSelected(True)
         super().mouseReleaseEvent(event)
+
 
 
 class ImageAnnotationView(qtw.QGraphicsView):
@@ -90,6 +135,9 @@ class ImageAnnotationView(qtw.QGraphicsView):
         super().__init__(parent)
         self.scene = qtw.QGraphicsScene(self)
         self.setScene(self.scene)
+        self.dragStartPosition = qtc.QPointF()
+        self.isDragging = False
+        self.start_pos = None
 
         # Dikdörtgen çizimi için başlangıç değişkenleri
         self.start_pos = None
@@ -102,24 +150,41 @@ class ImageAnnotationView(qtw.QGraphicsView):
         self.scene.addPixmap(pixmap)
 
     def mousePressEvent(self, event):
-        if event.button() == qtc.Qt.LeftButton:
+        item = self.itemAt(event.pos())
+        if not isinstance(item, ResizableRectItem): # TODO şunu click drag farkına çevirince olcak glb
+            # Yeni çizim başlatma
             self.start_pos = self.mapToScene(event.pos())
             self.current_rect = ResizableRectItem(qtc.QRectF(self.start_pos, self.start_pos))
-            self.scene.addItem(self.current_rect)  # Yeni dikdörtgen yeri değişmeden oluşturulur
+            self.scene.addItem(self.current_rect)
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
-        """Mouse hareket ettikçe dikdörtgenin boyutunu günceller"""
-        if self.start_pos and self.current_rect:
-            end_pos = self.mapToScene(event.pos())
-            rect = qtc.QRectF(self.start_pos, end_pos).normalized()
-            self.current_rect.setRect(rect)
+        if self.start_pos is not None:
+            # Başlangıç pozisyonu ile mevcut pozisyon arasındaki mesafeyi hesapla
+            dx = event.position().x() - self.start_pos.x()
+            dy = event.position().y() - self.start_pos.y()
+            distance = math.sqrt(dx ** 2 + dy ** 2)  # Öklid mesafesi
+            if distance > 5:  # Belirli bir eşik değeri (ör. 5 piksel)
+                # Eğer yeni bir dikdörtgen çiziliyorsa
+                if self.start_pos and self.current_rect:
+                    end_pos = self.mapToScene(event.pos())
+                    rect = qtc.QRectF(self.start_pos, end_pos).normalized()
+                    self.current_rect.setRect(rect)
         super().mouseMoveEvent(event)
 
+
     def mouseReleaseEvent(self, event):
-        if event.button() == qtc.Qt.LeftButton and self.current_rect:
+        item = self.itemAt(event.pos())
+        if isinstance(item, ResizableRectItem):
+            # Dikdörtgen seçimi
+            for rect_item in self.scene.items():
+                if isinstance(rect_item, ResizableRectItem):
+                    rect_item.setSelected(False)  # Herkesi deseç
+            item.setSelected(True)  # Teknik olarak sadece bir item seçili olacak
+        if self.current_rect:
+            # Yeni dikdörtgen çizimi tamamlandı
             print(f"Dikdörtgen eklendi: {self.current_rect.rect()}")
-            self.current_rect = None  # Çizim tamamlandığında boşaltılır
+            self.current_rect = None
             self.start_pos = None
         super().mouseReleaseEvent(event)
 
