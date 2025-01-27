@@ -8,6 +8,7 @@ from PySide6 import QtGui as qtg
 from PySide6 import QtWidgets as qtw
 
 from App.main.UI.mainWindow import Ui_MainWindow
+from classes.BoundingBox import BoundingBox
 
 #----------------------------------------------------------------------------------------------------------------------#
 imagePaths={}
@@ -138,6 +139,7 @@ class ImageAnnotationView(qtw.QGraphicsView):
         self.dragStartPosition = qtc.QPointF()
         self.isDragging = False
         self.start_pos = None
+        self.selected_item = None
 
         # Dikdörtgen çizimi için başlangıç değişkenleri
         self.start_pos = None
@@ -151,25 +153,25 @@ class ImageAnnotationView(qtw.QGraphicsView):
 
     def mousePressEvent(self, event):
         item = self.itemAt(event.pos())
-        if not isinstance(item, ResizableRectItem): # TODO şunu click drag farkına çevirince olcak glb
-            # Yeni çizim başlatma
+        resizeOrMove = False
+        if isinstance(item, ResizableRectItem) and item.isSelected():
+            resizeOrMove = True
+        # Yeni çizim başlatma
+        if not resizeOrMove:
             self.start_pos = self.mapToScene(event.pos())
             self.current_rect = ResizableRectItem(qtc.QRectF(self.start_pos, self.start_pos))
             self.scene.addItem(self.current_rect)
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
-        if self.start_pos is not None:
-            # Başlangıç pozisyonu ile mevcut pozisyon arasındaki mesafeyi hesapla
-            dx = event.position().x() - self.start_pos.x()
-            dy = event.position().y() - self.start_pos.y()
-            distance = math.sqrt(dx ** 2 + dy ** 2)  # Öklid mesafesi
-            if distance > 5:  # Belirli bir eşik değeri (ör. 5 piksel)
-                # Eğer yeni bir dikdörtgen çiziliyorsa
-                if self.start_pos and self.current_rect:
-                    end_pos = self.mapToScene(event.pos())
-                    rect = qtc.QRectF(self.start_pos, end_pos).normalized()
-                    self.current_rect.setRect(rect)
+        if self.selected_item:  # Seçiliyse hareket ettir
+            delta = event.scenePos() - event.lastScenePos()
+            self.selected_item.moveBy(delta.x(), delta.y())
+        elif self.start_pos:  # Başlangıç noktası bir dikdörtgeni çizer
+            end_pos = self.mapToScene(event.pos())
+            rect = qtc.QRectF(self.start_pos, end_pos).normalized()
+            self.current_rect.setRect(rect)
+
         super().mouseMoveEvent(event)
 
 
@@ -183,9 +185,10 @@ class ImageAnnotationView(qtw.QGraphicsView):
             item.setSelected(True)  # Teknik olarak sadece bir item seçili olacak
         if self.current_rect:
             # Yeni dikdörtgen çizimi tamamlandı
-            print(f"Dikdörtgen eklendi: {self.current_rect.rect()}")
             self.current_rect = None
             self.start_pos = None
+            BoundingBox.add(item.rect().x(), item.rect().y(), item.rect().x()+item.rect().width(), item.rect().y()+item.rect().height(),0,0)
+            print(BoundingBox.BoundingBoxes)
         super().mouseReleaseEvent(event)
 
 # TODO print yerine statusbarda yazsın
