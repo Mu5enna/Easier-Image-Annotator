@@ -6,10 +6,6 @@ from PySide6 import QtCore as qtc
 from PySide6 import QtGui as qtg
 from PySide6 import QtWidgets as qtw
 from PySide6.QtCore import Qt
-<<<<<<< HEAD
-=======
-
->>>>>>> 87ef1a2de4a9a8335aa123e8e8181e177f8c7061
 
 from App.main.UI.mainWindow import Ui_MainWindow
 from classes.BoundingBox import BoundingBox
@@ -294,21 +290,6 @@ class MainWindow(qtw.QMainWindow):
         self.ui.listWidget_AddedClasses.itemChanged.connect(self.class_selected)
         self.ui.pushButton_Save.clicked.connect(self.save_to_file)
 
-        self.context_menu = qtw.QMenu(self)
-        self.action_FirstFrame = self.context_menu.addAction("First Frame")
-        self.action_FirstFrame.triggered.connect(self.firstFrame)
-        self.action_LastFrame = self.context_menu.addAction("Last Frame")
-        self.action_LastFrame.triggered.connect(self.lastFrame)
-        self.action_FillInBetween = self.context_menu.addAction("Fill in Between")
-        self.action_FillInBetween.triggered.connect(self.fillInBetween)
-        self.action_FillInBetweenFor = self.context_menu.addAction("Fill in Between For:")
-        self.action_FillInBetweenFor.triggered.connect(self.fillInBetweenFor)
-
-<<<<<<< HEAD
-        self.ui.listWidget_Frames.customContextMenuRequested.connect(self.show_context_menu)
-
-    @qtc.Slot()
-=======
         """Context menu for frames"""
         self.context_menu = qtw.QMenu(self)
         self.action_FirstFrame = self.context_menu.addAction("First Frame")
@@ -345,7 +326,6 @@ class MainWindow(qtw.QMainWindow):
         if selected_item:
             self.context_menu.exec_(self.ui.listWidget_Frames.mapToGlobal(pos))
 
->>>>>>> 87ef1a2de4a9a8335aa123e8e8181e177f8c7061
     def class_selected(self, changed_item):
         if changed_item.checkState() == Qt.CheckState.Checked:
             for i in range(self.ui.listWidget_AddedClasses.count()):
@@ -353,10 +333,7 @@ class MainWindow(qtw.QMainWindow):
                 if item != changed_item:
                     item.setCheckState(Qt.CheckState.Unchecked)
 
-<<<<<<< HEAD
 
-=======
->>>>>>> 87ef1a2de4a9a8335aa123e8e8181e177f8c7061
     @qtc.Slot()
     def add_class(self):
         item = qtw.QListWidgetItem(selected_addclass_text)
@@ -420,16 +397,13 @@ class MainWindow(qtw.QMainWindow):
                     item.setText(display_str)
                     self.ui.listWidget_AddedClasses.addItem(item)
 
-<<<<<<< HEAD
-
+    @qtc.Slot()
     def show_context_menu(self, pos):
         # Sağ tık menüsünü, QListWidget üzerinde sağ tıklanan öğe ile konumlandır
         selected_item = self.ui.listWidget_Frames.itemAt(pos)  # Tıklanan öğe
         if selected_item:
             self.context_menu.exec_(self.ui.listWidget_Frames.mapToGlobal(pos))
 
-=======
->>>>>>> 87ef1a2de4a9a8335aa123e8e8181e177f8c7061
     @qtc.Slot()
     def firstFrame(self):
         print("first")
