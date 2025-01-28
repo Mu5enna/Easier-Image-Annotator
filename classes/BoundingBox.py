@@ -2,7 +2,7 @@ class BoundingBox:
     _id_ = 0
     BoundingBoxes = {}
     def __init__(self, x1=float, y1=float, x2=float, y2=float, classId=0, trackId=0):
-        self.id = BoundingBox._id_
+        self._id = BoundingBox._id_
         BoundingBox._id_+=1
         self.x1 = x1
         self.y1 = y1
@@ -10,16 +10,16 @@ class BoundingBox:
         self.y2 = y2
         self.classId = classId
         self.trackId = trackId
-        BoundingBox.BoundingBoxes[id] = self
+        BoundingBox.BoundingBoxes[self._id] = self
 
     def __repr__(self):
-        return f"BoundingBox(id={self.id}, x1={self.x1}, y1={self.y1}, x2={self.x2}, y2={self.y2}, classId={self.classId}, trackId={self.trackId})\n"
+        return f"BoundingBox(id={self._id}, x1={self.x1}, y1={self.y1}, x2={self.x2}, y2={self.y2}, classId={self.classId}, trackId={self.trackId})\n"
 
     @classmethod
     def add(cls, x1, y1, x2, y2, classId=0, trackId=None):
         """Yeni bir BoundingBox oluşturur ve BoundingBoxes'a ekler."""
         new_box = cls(x1, y1, x2, y2, classId, trackId)
-        cls.BoundingBoxes[new_box.id] = new_box
+        cls.BoundingBoxes[new_box._id] = new_box
         return new_box
 
     @classmethod
