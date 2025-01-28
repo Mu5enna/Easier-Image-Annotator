@@ -128,9 +128,6 @@ class ResizableRectItem(qtw.QGraphicsRectItem):
             if rect.width() < 5 or rect.height() < 5:
                 return
 
-
-
-
             # Güncellenmiş dikdörtgeni ayarla
             self.setRect(rect.normalized())
         elif self.isSelected():  # Seçiliyse hareket ettir
@@ -143,20 +140,19 @@ class ResizableRectItem(qtw.QGraphicsRectItem):
         # İşlem bittikten sonra boyutlandırma durdurulmalı
         if self.isSelected():
             self.is_resizing = False
-        if self.start_pos != self.end_pos: #todo start ve end aynı geliyor??
-            # Eğer bu öğe bir BoundingBox ile ilişkilendirilmişse, güncelle
-            if self.bounding_box_id is not None:
-                print(f"Updating BoundingBox with id: {self.bounding_box_id}")
-                rect = self.rect().normalized()  # Geçerli dikdörtgen sınırlarını al
-                BoundingBox.edit(
-                    self.bounding_box_id,
-                    x1=rect.left(),
-                    y1=rect.top(),
-                    x2=rect.right(),
-                    y2=rect.bottom()
-                )
-                print("Updated BoundingBox:", BoundingBox.BoundingBoxes[self.bounding_box_id])
-                print(BoundingBox.BoundingBoxes)
+        # Eğer bu öğe bir BoundingBox ile ilişkilendirilmişse, güncelle
+        if self.bounding_box_id is not None:
+            print(f"Updating BoundingBox with id: {self.bounding_box_id}")
+            rect = self.rect().normalized()  # Geçerli dikdörtgen sınırlarını al
+            BoundingBox.edit(
+                self.bounding_box_id,
+                x1=self.mapToScene(rect.topLeft()).x(),
+                y1=self.mapToScene(rect.topLeft()).y(),
+                x2=self.mapToScene(rect.bottomRight()).x(),
+                y2=self.mapToScene(rect.bottomRight()).y()
+            )
+            print("Updated BoundingBox:", BoundingBox.BoundingBoxes[self.bounding_box_id])
+            print(BoundingBox.BoundingBoxes)
         else:
             print(f"selected box no: {self.bounding_box_id}")
 
@@ -179,6 +175,9 @@ class ImageAnnotationView(qtw.QGraphicsView):
         self.start_pos = None
         self.selected_item = None
         self.selected_bounding_box_id = -1
+        self.setSizePolicy(qtw.QSizePolicy.Expanding, qtw.QSizePolicy.Expanding)
+        self.setSceneRect(self.scene.itemsBoundingRect())
+        
 
         # Dikdörtgen çizimi için başlangıç değişkenleri
         self.current_rect = None
@@ -197,6 +196,7 @@ class ImageAnnotationView(qtw.QGraphicsView):
         # Yeni çizim başlatma
         if not resizeOrMove:
             self.start_pos = self.mapToScene(event.pos())
+            print(f"Start position: {self.start_pos}")
             self.current_rect = ResizableRectItem(qtc.QRectF(self.start_pos, self.start_pos))
             self.scene.addItem(self.current_rect)
         super().mousePressEvent(event)
@@ -271,6 +271,10 @@ class MainWindow(qtw.QMainWindow):
         path: str = r"C:\Users\Serhat\Desktop\ids.txt"
         self.load_ids(self, path)
 
+        # Grafik ayarları
+        self.ui.graphicsView.setSizePolicy(qtw.QSizePolicy.Expanding, qtw.QSizePolicy.Expanding)
+        self.ui.graphicsView.setFrameShape(qtw.QFrame.NoFrame)  # Kenar boşluklarını kaldırır
+        self.ui.graphicsView.fitInView(self.ui.graphicsView.sceneRect(), qtc.Qt.KeepAspectRatio)
 
         # Qt Designer'daki QGraphicsView'i özelleştirilmiş sınıfa dönüştürüyoruz
         self.ui.graphicsView = ImageAnnotationView(self.ui.graphicsView)
@@ -278,12 +282,6 @@ class MainWindow(qtw.QMainWindow):
         # Add frames and switch frames when a list item is clicked
         self.ui.pushButton_AddFrame.clicked.connect(self.fileDialog)
         self.ui.listWidget_Frames.currentRowChanged.connect(self.loadImage)
-
-        # Grafik ayarları
-        self.ui.graphicsView.setSizePolicy(qtw.QSizePolicy.Expanding, qtw.QSizePolicy.Expanding)
-        self.ui.graphicsView.setRenderHint(qtg.QPainter.Antialiasing)
-        self.ui.graphicsView.setFrameShape(qtw.QFrame.NoFrame)  # Kenar boşluklarını kaldırır
-
 
         self.ui.comboBox_Classes.currentIndexChanged.connect(self.combo_classes)
         self.ui.pushButton_AddClass.clicked.connect(self.add_class)
@@ -302,9 +300,9 @@ class MainWindow(qtw.QMainWindow):
         self.action_FillInBetweenFor.triggered.connect(self.fillInBetweenFor)
 
         self.ui.listWidget_Frames.customContextMenuRequested.connect(self.show_context_menu)
-        #self.ui.pushButton_AddTrackId.clicked.connect(self.getSelectedBoxId)
 
         self.ui.pushButton_AddTrackId.clicked.connect(self.asd)
+
 
 
     def asd(self):
