@@ -10,10 +10,10 @@ class BoundingBox:
         self.y2 = y2
         self.classId = classId
         self.trackId = trackId
-        BoundingBox.BoundingBoxes[trackId] = self
+        BoundingBox.BoundingBoxes[id] = self
 
     def __repr__(self):
-        return f"BoundingBox(id={self.id}, x1={self.x1}, y1={self.y1}, x2={self.x2}, y2={self.y2}, classId={self.classId}, trackId={self.trackId})"
+        return f"BoundingBox(id={self.id}, x1={self.x1}, y1={self.y1}, x2={self.x2}, y2={self.y2}, classId={self.classId}, trackId={self.trackId})\n"
 
     @classmethod
     def add(cls, x1, y1, x2, y2, classId=0, trackId=None):
