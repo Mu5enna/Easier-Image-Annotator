@@ -1,16 +1,30 @@
 import math
 import os
 import sys
+import json
 from pathlib import Path
 
 from PySide6 import QtCore as qtc
 from PySide6 import QtGui as qtg
 from PySide6 import QtWidgets as qtw
+from PySide6.QtCore import Qt
 
 from App.main.UI.mainWindow import Ui_MainWindow
 
 #----------------------------------------------------------------------------------------------------------------------#
 imagePaths={}
+json_path = ""
+selected_addclass_text = ""
+selected_addclass_id = 0
+
+class Item:
+    def __init__(self, text, id):
+        self.text = text
+        self.id = id
+
+    def stringify(self):
+        return self.text
+
 
 class ResizableRectItem(qtw.QGraphicsRectItem):
     def __init__(self, rect, parent=None):
@@ -188,6 +202,7 @@ class ImageAnnotationView(qtw.QGraphicsView):
             self.start_pos = None
         super().mouseReleaseEvent(event)
 
+
 # TODO print yerine statusbarda yazsın
 
 class MainWindow(qtw.QMainWindow):
@@ -195,6 +210,10 @@ class MainWindow(qtw.QMainWindow):
         super().__init__()
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
+
+        path: str = r"C:\Users\Eren\Desktop\ids.txt"
+        self.load_ids(self, path)
+
 
         # Qt Designer'daki QGraphicsView'i özelleştirilmiş sınıfa dönüştürüyoruz
         self.ui.graphicsView = ImageAnnotationView(self.ui.graphicsView)
@@ -206,12 +225,107 @@ class MainWindow(qtw.QMainWindow):
         self.ui.graphicsView.setSizePolicy(qtw.QSizePolicy.Expanding, qtw.QSizePolicy.Expanding)
         self.ui.graphicsView.setRenderHint(qtg.QPainter.Antialiasing)
         self.ui.graphicsView.fitInView(self.ui.graphicsView.sceneRect(), qtc.Qt.KeepAspectRatio)
+        self.ui.comboBox_Classes.currentIndexChanged.connect(self.combo_classes)
+        self.ui.pushButton_AddClass.clicked.connect(self.add_class)
+        self.ui.listWidget_AddedClasses.itemChanged.connect(self.class_selected)
+
+
+    def class_selected(self, changed_item):
+        if changed_item.checkState() == Qt.CheckState.Checked:
+            for i in range(self.ui.listWidget_AddedClasses.count()):
+                item = self.ui.listWidget_AddedClasses.item(i)
+                if item != changed_item:
+                    item.setCheckState(Qt.CheckState.Unchecked)
+
+    qtc.Slot()
+    def add_class(self):
+        item = qtw.QListWidgetItem(selected_addclass_text)
+        item.setData(qtc.Qt.ItemDataRole.UserRole, selected_addclass_id)
+        item.setFlags(item.flags() | qtc.Qt.ItemFlag.ItemIsUserCheckable)
+        item.setCheckState(qtc.Qt.CheckState.Unchecked)
+        display_str = selected_addclass_text + " (" + str(item.data(qtc.Qt.ItemDataRole.UserRole)) + ")"
+        item.setText(display_str)
+        self.ui.listWidget_AddedClasses.addItem(item)
+        self.upd_cur_class_file(self, selected_addclass_text, selected_addclass_id, False)
+
+    @staticmethod
+    def upd_cur_class_file(self, text: str, cid: int, is_delete: bool):
+        global json_path
+        file_path = json_path + "/classes.txt"
+        if not is_delete:
+            with open(file_path, "a") as f:
+                file_input = text + " , " + str(cid) + "\n"
+                f.write(file_input)
+        else:
+            pass ## deleting code
+
+    @staticmethod
+    def load_ids(self, file_path: str):
+        with open(file_path, "r") as f:
+            f.readline()
+            for line in f:
+                if line.strip() != "":
+                    values = [value.strip() for value in line.strip().split(',')]
+                    text, cid = values
+                    item = Item(text, cid)
+                    self.ui.comboBox_Classes.addItem(item.text, item.id)
+
+    @staticmethod
+    def load_class_file(self):
+        with open(json_path + "/classes.txt", "r") as f:
+            for line in f:
+                if line.strip() != "":
+                    values = [value.strip() for value in line.strip().split(',')]
+                    text, cid = values
+                    item = qtw.QListWidgetItem(text)
+                    item.setData(qtc.Qt.ItemDataRole.UserRole, cid)
+                    item.setFlags(item.flags() | qtc.Qt.ItemFlag.ItemIsUserCheckable)
+                    item.setCheckState(qtc.Qt.CheckState.Unchecked)
+                    display_str = text + " (" + str(item.data(qtc.Qt.ItemDataRole.UserRole)) + ")"
+                    item.setText(display_str)
+                    self.ui.listWidget_AddedClasses.addItem(item)
 
 
 
     @qtc.Slot()
+    def combo_classes(self):
+        index = self.ui.comboBox_Classes.currentIndex()
+        if index >= 0:
+            global selected_addclass_text
+            global selected_addclass_id
+            selected_addclass_text = self.ui.comboBox_Classes.currentText()
+            selected_addclass_id = self.ui.comboBox_Classes.currentData()
+
+    @qtc.Slot()
     def fileDialog(self):
+        create_json = False
         folder = qtw.QFileDialog.getExistingDirectory(self, 'Select Folder', str(Path.home() / "Desktop"))
+        global json_path
+        json_path = folder + "_json"
+        try:
+            os.mkdir(json_path)
+            create_json = True
+            ## create new class file
+            open(json_path + "/classes.txt", "x")
+
+        except FileExistsError:
+            msg_box = qtw.QMessageBox()
+            msg_box.setIcon(qtw.QMessageBox.Icon.Information)
+            msg_box.setWindowTitle("Existent File")
+            folder_icon = qtw.QApplication.style().standardIcon(qtw.QStyle.SP_DirOpenIcon)
+            msg_box.setWindowIcon(folder_icon)
+            msg_box.setText(f"File '{json_path}' already exists")
+            msg_box.exec_()
+            self.load_class_file(self)
+        except Exception as e:
+            msg_box = qtw.QMessageBox()
+            msg_box.setIcon(qtw.QMessageBox.Icon.Information)
+            msg_box.setWindowTitle("Error")
+            error_icon = qtw.QApplication.style().standardIcon(qtw.QStyle.SP_MessageBoxCritical)
+            msg_box.setWindowIcon(error_icon)
+            qtw.QMessageBox.text(f"Error occured: {e}")
+            msg_box.exec_()
+
         if folder:
             imagePaths.clear()
             for filename in os.listdir(folder):
@@ -219,9 +333,15 @@ class MainWindow(qtw.QMainWindow):
                     full_path = os.path.join(folder, filename)
                     imagePaths[filename] = full_path
             self.ui.listWidget_Frames.clear()
-            for key in imagePaths.keys():
+            for key, value in imagePaths.items():
                 self.ui.listWidget_Frames.addItem(key)
+                if create_json:
+                    with open(json_path + "/" + os.path.splitext(os.path.basename(str(key)))[0] + ".json", "w") as f:
+                        def_json_struct = "{\n}"
+                        f.write(def_json_struct)
+
             self.ui.listWidget_Frames.setCurrentRow(0)
+
 
     @qtc.Slot()
     def loadImage(self):

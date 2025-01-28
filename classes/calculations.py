@@ -112,12 +112,3 @@ class Calculations:
                         }
 
         JsonData.json_dump(curr_addr, curr_json_object)
-
-
-
-file1_path = r"C:\Users\Eren\Desktop\00001.json"
-file2_path = r"C:\Users\Eren\Desktop\00002.json"
-file3_path = r"C:\Users\Eren\Desktop\00003.json"
-track_id_list = [0,1,2]
-
-print(Calculations.calc_new_points(file1_path, file2_path, Calculations.calc_pi(Calculations.calc_diffs(file1_path, file3_path, track_id_list), 2)))
