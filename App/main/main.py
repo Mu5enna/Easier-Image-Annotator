@@ -1,13 +1,15 @@
-import math
 import os
 import sys
-import json
 from pathlib import Path
 
 from PySide6 import QtCore as qtc
 from PySide6 import QtGui as qtg
 from PySide6 import QtWidgets as qtw
 from PySide6.QtCore import Qt
+<<<<<<< HEAD
+=======
+
+>>>>>>> 87ef1a2de4a9a8335aa123e8e8181e177f8c7061
 
 from App.main.UI.mainWindow import Ui_MainWindow
 from classes.BoundingBox import BoundingBox
@@ -29,7 +31,6 @@ class Item:
 
 
 class ResizableRectItem(qtw.QGraphicsRectItem):
-    resized = qtc.Signal(qtc.QRectF)
     def __init__(self, rect, bounding_box_id=None, parent=None):
         super().__init__(rect, parent)
         self.bounding_box_id = bounding_box_id  # Bu dikdörtgenin BoundingBox id'si
@@ -129,7 +130,6 @@ class ResizableRectItem(qtw.QGraphicsRectItem):
                 rect.setBottom(rect.bottom() + delta.y())
 
             if rect.width() < 5 or rect.height() < 5:
-
                 return
 
 
@@ -182,6 +182,7 @@ class ImageAnnotationView(qtw.QGraphicsView):
         self.isDragging = False
         self.start_pos = None
         self.selected_item = None
+        self.selected_bounding_box_id = -1
 
         # Dikdörtgen çizimi için başlangıç değişkenleri
         self.current_rect = None
@@ -228,6 +229,7 @@ class ImageAnnotationView(qtw.QGraphicsView):
                     rect_item.setSelected(False)
             # Seçilen dikdörtgeni aktif yap
             item.setSelected(True)
+            self.selected_bounding_box_id = item.bounding_box_id
 
         # Yeni bir dikdörtgen oluşturuluyorsa
         if self.current_rect:
@@ -242,7 +244,8 @@ class ImageAnnotationView(qtw.QGraphicsView):
                     rect.left(), rect.top(), rect.right(), rect.bottom(), classId=0, trackId=0
                 )
                 # Dikdörtgenin BoundingBox kimliğini ilişkilendir
-                self.current_rect.bounding_box_id = bounding_box.id
+                self.current_rect.bounding_box_id = bounding_box._id
+                self.selected_bounding_box_id = bounding_box._id
 
                 print(f"New BoundingBox added: {bounding_box}")
                 print(f"BoundingBox ID assigned to ResizableRectItem: {self.current_rect.bounding_box_id}\n")
@@ -253,6 +256,13 @@ class ImageAnnotationView(qtw.QGraphicsView):
 
         super().mouseReleaseEvent(event)
 
+    def get_selected_bounding_box(self):
+        """Seçili dikdörtgenin BoundingBox ID'sini döndürür"""
+        if self.selected_bounding_box_id >= 0:
+            return self.selected_bounding_box_id
+        else:
+            return None
+
 
 # TODO print yerine statusbarda yazsın
 
@@ -262,7 +272,7 @@ class MainWindow(qtw.QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
-        path: str = r"C:\Users\Eren\Desktop\ids.txt"
+        path: str = r"C:\Users\Serhat\Desktop\ids.txt"
         self.load_ids(self, path)
 
 
@@ -273,9 +283,12 @@ class MainWindow(qtw.QMainWindow):
         self.ui.pushButton_AddFrame.clicked.connect(self.fileDialog)
         self.ui.listWidget_Frames.currentRowChanged.connect(self.loadImage)
 
+        # Grafik ayarları
         self.ui.graphicsView.setSizePolicy(qtw.QSizePolicy.Expanding, qtw.QSizePolicy.Expanding)
         self.ui.graphicsView.setRenderHint(qtg.QPainter.Antialiasing)
-        self.ui.graphicsView.fitInView(self.ui.graphicsView.sceneRect(), qtc.Qt.KeepAspectRatio)
+        self.ui.graphicsView.setFrameShape(qtw.QFrame.NoFrame)  # Kenar boşluklarını kaldırır
+
+
         self.ui.comboBox_Classes.currentIndexChanged.connect(self.combo_classes)
         self.ui.pushButton_AddClass.clicked.connect(self.add_class)
         self.ui.listWidget_AddedClasses.itemChanged.connect(self.class_selected)
@@ -291,9 +304,48 @@ class MainWindow(qtw.QMainWindow):
         self.action_FillInBetweenFor = self.context_menu.addAction("Fill in Between For:")
         self.action_FillInBetweenFor.triggered.connect(self.fillInBetweenFor)
 
+<<<<<<< HEAD
         self.ui.listWidget_Frames.customContextMenuRequested.connect(self.show_context_menu)
 
     @qtc.Slot()
+=======
+        """Context menu for frames"""
+        self.context_menu = qtw.QMenu(self)
+        self.action_FirstFrame = self.context_menu.addAction("First Frame")
+        self.action_FirstFrame.triggered.connect(self.firstFrame)
+        self.action_LastFrame = self.context_menu.addAction("Last Frame")
+        self.action_LastFrame.triggered.connect(self.lastFrame)
+        self.action_FillInBetween = self.context_menu.addAction("Fill in Between")
+        self.action_FillInBetween.triggered.connect(self.fillInBetween)
+        self.action_FillInBetweenFor = self.context_menu.addAction("Fill in Between For:")
+        self.action_FillInBetweenFor.triggered.connect(self.fillInBetweenFor)
+
+        self.ui.listWidget_Frames.customContextMenuRequested.connect(self.show_context_menu)
+        #self.ui.pushButton_AddTrackId.clicked.connect(self.getSelectedBoxId)
+
+        self.ui.pushButton_AddTrackId.clicked.connect(self.asd)
+
+
+    def asd(self):
+        for box in BoundingBox.BoundingBoxes.values():
+            print(box.x1)
+
+
+    @qtc.Slot()
+    def getSelectedBoxId(self):
+        selected_box_id = self.ui.graphicsView.get_selected_bounding_box()
+        if selected_box_id is not None:
+            print(f"Selected BoundingBox ID: {selected_box_id}")
+        else:
+            print("No BoundingBox is selected.")
+
+    def show_context_menu(self, pos):
+        # Sağ tık menüsünü, QListWidget üzerinde sağ tıklanan öğe ile konumlandır
+        selected_item = self.ui.listWidget_Frames.itemAt(pos)  # Tıklanan öğe
+        if selected_item:
+            self.context_menu.exec_(self.ui.listWidget_Frames.mapToGlobal(pos))
+
+>>>>>>> 87ef1a2de4a9a8335aa123e8e8181e177f8c7061
     def class_selected(self, changed_item):
         if changed_item.checkState() == Qt.CheckState.Checked:
             for i in range(self.ui.listWidget_AddedClasses.count()):
@@ -301,7 +353,10 @@ class MainWindow(qtw.QMainWindow):
                 if item != changed_item:
                     item.setCheckState(Qt.CheckState.Unchecked)
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 87ef1a2de4a9a8335aa123e8e8181e177f8c7061
     @qtc.Slot()
     def add_class(self):
         item = qtw.QListWidgetItem(selected_addclass_text)
@@ -365,6 +420,7 @@ class MainWindow(qtw.QMainWindow):
                     item.setText(display_str)
                     self.ui.listWidget_AddedClasses.addItem(item)
 
+<<<<<<< HEAD
 
     def show_context_menu(self, pos):
         # Sağ tık menüsünü, QListWidget üzerinde sağ tıklanan öğe ile konumlandır
@@ -372,6 +428,8 @@ class MainWindow(qtw.QMainWindow):
         if selected_item:
             self.context_menu.exec_(self.ui.listWidget_Frames.mapToGlobal(pos))
 
+=======
+>>>>>>> 87ef1a2de4a9a8335aa123e8e8181e177f8c7061
     @qtc.Slot()
     def firstFrame(self):
         print("first")
