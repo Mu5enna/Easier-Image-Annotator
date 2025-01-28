@@ -7,14 +7,11 @@ from pathlib import Path
 from PySide6 import QtCore as qtc
 from PySide6 import QtGui as qtg
 from PySide6 import QtWidgets as qtw
-<<<<<<< HEAD
 from PySide6.QtCore import Qt
-=======
-from PySide6.QtCore import QRectF
->>>>>>> aa5e3042e5b9f8f840c872011638aa5b10eb99c1
 
 from App.main.UI.mainWindow import Ui_MainWindow
 from classes.BoundingBox import BoundingBox
+from classes.calculations import JsonData, Calculations
 
 #----------------------------------------------------------------------------------------------------------------------#
 imagePaths={}
@@ -282,8 +279,21 @@ class MainWindow(qtw.QMainWindow):
         self.ui.comboBox_Classes.currentIndexChanged.connect(self.combo_classes)
         self.ui.pushButton_AddClass.clicked.connect(self.add_class)
         self.ui.listWidget_AddedClasses.itemChanged.connect(self.class_selected)
+        self.ui.pushButton_Save.clicked.connect(self.save_to_file)
 
+        self.context_menu = qtw.QMenu(self)
+        self.action_FirstFrame = self.context_menu.addAction("First Frame")
+        self.action_FirstFrame.triggered.connect(self.firstFrame)
+        self.action_LastFrame = self.context_menu.addAction("Last Frame")
+        self.action_LastFrame.triggered.connect(self.lastFrame)
+        self.action_FillInBetween = self.context_menu.addAction("Fill in Between")
+        self.action_FillInBetween.triggered.connect(self.fillInBetween)
+        self.action_FillInBetweenFor = self.context_menu.addAction("Fill in Between For:")
+        self.action_FillInBetweenFor.triggered.connect(self.fillInBetweenFor)
 
+        self.ui.listWidget_Frames.customContextMenuRequested.connect(self.show_context_menu)
+
+    @qtc.Slot()
     def class_selected(self, changed_item):
         if changed_item.checkState() == Qt.CheckState.Checked:
             for i in range(self.ui.listWidget_AddedClasses.count()):
@@ -291,7 +301,8 @@ class MainWindow(qtw.QMainWindow):
                 if item != changed_item:
                     item.setCheckState(Qt.CheckState.Unchecked)
 
-    qtc.Slot()
+
+    @qtc.Slot()
     def add_class(self):
         item = qtw.QListWidgetItem(selected_addclass_text)
         item.setData(qtc.Qt.ItemDataRole.UserRole, selected_addclass_id)
@@ -301,6 +312,21 @@ class MainWindow(qtw.QMainWindow):
         item.setText(display_str)
         self.ui.listWidget_AddedClasses.addItem(item)
         self.upd_cur_class_file(self, selected_addclass_text, selected_addclass_id, False)
+
+    @qtc.Slot()
+    def save_to_file(self):
+        image_file_path = json_path + "/" + os.path.splitext(os.path.basename(self.ui.listWidget_Frames.currentItem().text()))[0] + ".json"
+        json_object = JsonData.json_load(image_file_path)
+        for box in BoundingBox.BoundingBoxes.values():
+            box_id = Calculations.available_box_id(json_object)
+            box_values = [box.x1, box.y1, box.x2, box.y2]
+            json_object[box_id] = {
+                'box': box_values,
+                'class': box.classId,
+                'track_id': box.trackId
+            }
+
+        JsonData.json_dump(image_file_path, json_object)
 
     @staticmethod
     def upd_cur_class_file(self, text: str, cid: int, is_delete: bool):
@@ -338,18 +364,6 @@ class MainWindow(qtw.QMainWindow):
                     display_str = text + " (" + str(item.data(qtc.Qt.ItemDataRole.UserRole)) + ")"
                     item.setText(display_str)
                     self.ui.listWidget_AddedClasses.addItem(item)
-
-        self.context_menu = qtw.QMenu(self)
-        self.action_FirstFrame = self.context_menu.addAction("First Frame")
-        self.action_FirstFrame.triggered.connect(self.firstFrame)
-        self.action_LastFrame = self.context_menu.addAction("Last Frame")
-        self.action_LastFrame.triggered.connect(self.lastFrame)
-        self.action_FillInBetween = self.context_menu.addAction("Fill in Between")
-        self.action_FillInBetween.triggered.connect(self.fillInBetween)
-        self.action_FillInBetweenFor = self.context_menu.addAction("Fill in Between For:")
-        self.action_FillInBetweenFor.triggered.connect(self.fillInBetweenFor)
-
-        self.ui.listWidget_Frames.customContextMenuRequested.connect(self.show_context_menu)
 
 
     def show_context_menu(self, pos):
@@ -414,6 +428,7 @@ class MainWindow(qtw.QMainWindow):
             msg_box.exec_()
 
         if folder:
+            global imagePaths
             imagePaths.clear()
             for filename in os.listdir(folder):
                 if filename.lower().endswith((".jpg", ".jpeg", ".png")):
