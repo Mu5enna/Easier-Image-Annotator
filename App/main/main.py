@@ -268,7 +268,7 @@ class MainWindow(qtw.QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
-        path: str = r"C:\Users\Serhat\Desktop\ids.txt"
+        path: str = r"C:\Users\Eren\Desktop\ids.txt"
         self.load_ids(self, path)
 
         # Grafik ayarları
@@ -331,6 +331,9 @@ class MainWindow(qtw.QMainWindow):
                 if item != changed_item:
                     item.setCheckState(Qt.CheckState.Unchecked)
 
+    def assign_track_id(self):
+        pass ##trackid atama
+
 
     @qtc.Slot()
     def add_class(self):
@@ -346,17 +349,30 @@ class MainWindow(qtw.QMainWindow):
     @qtc.Slot()
     def save_to_file(self):
         image_file_path = json_path + "/" + os.path.splitext(os.path.basename(self.ui.listWidget_Frames.currentItem().text()))[0] + ".json"
-        json_object = JsonData.json_load(image_file_path)
+        json_object = {}
+        box_id = 0
         for box in BoundingBox.BoundingBoxes.values():
-            box_id = Calculations.available_box_id(json_object)
             box_values = [box.x1, box.y1, box.x2, box.y2]
             json_object[box_id] = {
                 'box': box_values,
                 'class': box.classId,
                 'track_id': box.trackId
             }
+            box_id += 1
 
         JsonData.json_dump(image_file_path, json_object)
+
+    @qtc.Slot()
+    def load_from_file(self):
+        image_file_path = json_path + "/" + os.path.splitext(os.path.basename(self.ui.listWidget_Frames.currentItem().text()))[0] + ".json"
+        json_object = JsonData.json_load(image_file_path)
+        for key, entry in json_object.items():
+            BoundingBox.add(entry.box[0], entry.box[1], entry.box[2], entry.box[3], entry.class_id, entry.track_id )
+            rect = qtc.QRect(entry.box[0], entry.box[1], (entry.box[2] - entry.box[0]), (entry.box[3] - entry.box[1]))
+            rect_item = ResizableRectItem(rect)
+            rect_item.bounding_box_id = key
+            self.ui.graphicsView.scene.addItem(rect_item)
+
 
     @staticmethod
     def upd_cur_class_file(self, text: str, cid: int, is_delete: bool):
@@ -446,7 +462,7 @@ class MainWindow(qtw.QMainWindow):
             folder_icon = qtw.QApplication.style().standardIcon(qtw.QStyle.SP_DirOpenIcon)
             msg_box.setWindowIcon(folder_icon)
             msg_box.setText(f"File '{json_path}' already exists")
-            msg_box.exec_()
+            msg_box.exec()
             self.load_class_file(self)
         except Exception as e:
             msg_box = qtw.QMessageBox()
@@ -455,7 +471,7 @@ class MainWindow(qtw.QMainWindow):
             error_icon = qtw.QApplication.style().standardIcon(qtw.QStyle.SP_MessageBoxCritical)
             msg_box.setWindowIcon(error_icon)
             qtw.QMessageBox.text(f"Error occured: {e}")
-            msg_box.exec_()
+            msg_box.exec()
 
         if folder:
             global imagePaths
@@ -479,6 +495,7 @@ class MainWindow(qtw.QMainWindow):
     def loadImage(self):
         self.ui.graphicsView.load_image(imagePaths[self.ui.listWidget_Frames.currentItem().text()])
         self.ui.graphicsView.show()
+        self.load_from_file()
 
 
 if __name__ == "__main__":
