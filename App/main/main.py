@@ -144,7 +144,7 @@ class ResizableRectItem(qtw.QGraphicsRectItem):
         if self.bounding_box_id is not None:
             print(f"Updating BoundingBox with id: {self.bounding_box_id}")
             rect = self.rect().normalized()  # Geçerli dikdörtgen sınırlarını al
-            BoundingBox.edit(
+            BoundingBox.update(
                 self.bounding_box_id,
                 x1=self.mapToScene(rect.topLeft()).x(),
                 y1=self.mapToScene(rect.topLeft()).y(),
@@ -255,9 +255,10 @@ class ImageAnnotationView(qtw.QGraphicsView):
     def get_selected_bounding_box(self):
         """Seçili dikdörtgenin BoundingBox ID'sini döndürür"""
         if self.selected_bounding_box_id >= 0:
-            return self.selected_bounding_box_id
+            ret:int = self.selected_bounding_box_id
+            return ret
         else:
-            return None
+            return -1
 
 
 # TODO print yerine statusbarda yazsın
@@ -268,7 +269,7 @@ class MainWindow(qtw.QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
-        path: str = r"C:\Users\Eren\Desktop\ids.txt"
+        path: str = r"C:\Users\Serhat\Desktop\ids.txt"
         self.load_ids(self, path)
 
         # Grafik ayarları
@@ -301,22 +302,37 @@ class MainWindow(qtw.QMainWindow):
 
         self.ui.listWidget_Frames.customContextMenuRequested.connect(self.show_context_menu)
 
-        self.ui.pushButton_AddTrackId.clicked.connect(self.asd)
+        self.ui.pushButton_Delete.clicked.connect(self.deleteBox)
 
 
+    @qtc.Slot()
+    def deleteBox(self): #todo silince en büyük+1 den başlasın
+        selected_box_id = self.getSelectedBoxId()
+        if selected_box_id >= 0:
+            print(f"Deleting BoundingBox with id: {selected_box_id}")
 
-    def asd(self):
-        for box in BoundingBox.BoundingBoxes.values():
-            print(box.x1)
+            # Delete the BoundingBox from the BoundingBox class
+            BoundingBox.delete(selected_box_id)
+            # Remove the corresponding ResizableRectItem from the scene
+            for item in self.ui.graphicsView.scene.items():
+                if isinstance(item, ResizableRectItem) and item.bounding_box_id == selected_box_id:
+                    self.ui.graphicsView.scene.removeItem(item)
+                    break
+            self.ui.graphicsView.scene.removeItem(self.ui.graphicsView.scene.items()[selected_box_id])
+            print(f"BoundingBox List: {BoundingBox.BoundingBoxes}")
+            print(f"GraphicsView Scene: {self.ui.graphicsView.scene.items()}")
 
 
     @qtc.Slot()
     def getSelectedBoxId(self):
         selected_box_id = self.ui.graphicsView.get_selected_bounding_box()
-        if selected_box_id is not None:
+        if selected_box_id >= 0:
             print(f"Selected BoundingBox ID: {selected_box_id}")
+            ret:int = selected_box_id
+            return ret
         else:
             print("No BoundingBox is selected.")
+            return -1
 
     def show_context_menu(self, pos):
         # Sağ tık menüsünü, QListWidget üzerinde sağ tıklanan öğe ile konumlandır
@@ -370,7 +386,7 @@ class MainWindow(qtw.QMainWindow):
             BoundingBox.add(entry.box[0], entry.box[1], entry.box[2], entry.box[3], entry.class_id, entry.track_id )
             rect = qtc.QRect(entry.box[0], entry.box[1], (entry.box[2] - entry.box[0]), (entry.box[3] - entry.box[1]))
             rect_item = ResizableRectItem(rect)
-            rect_item.bounding_box_id = key
+            rect_item.bounding_box_id = int(key)
             self.ui.graphicsView.scene.addItem(rect_item)
 
 
@@ -493,6 +509,8 @@ class MainWindow(qtw.QMainWindow):
 
     @qtc.Slot()
     def loadImage(self):
+        BoundingBox.reset()
+        self.ui.graphicsView.scene.clear()
         self.ui.graphicsView.load_image(imagePaths[self.ui.listWidget_Frames.currentItem().text()])
         self.ui.graphicsView.show()
         self.load_from_file()

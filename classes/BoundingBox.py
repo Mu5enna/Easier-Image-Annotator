@@ -23,7 +23,7 @@ class BoundingBox:
         return new_box
 
     @classmethod
-    def edit(cls, box_id, x1=None, y1=None, x2=None, y2=None, classId=None, trackId=None):
+    def update(cls, box_id, x1=None, y1=None, x2=None, y2=None, classId=None, trackId=None):
         """Belirtilen id'deki BoundingBox nesnesini günceller."""
         if box_id not in cls.BoundingBoxes:
             raise ValueError(f"BoundingBox with id {box_id} does not exist.")
@@ -44,3 +44,15 @@ class BoundingBox:
             box.trackId = trackId
 
         return box
+
+    @classmethod
+    def delete(cls, box_id):
+        """Belirtilen id'e sahip BoundingBox nesnesini siler."""
+        if box_id not in cls.BoundingBoxes:
+            raise ValueError(f"BoundingBox with id {box_id} does not exist.")
+        del cls.BoundingBoxes[box_id]
+
+    @classmethod
+    def reset(cls):
+        BoundingBox._id_ = 0
+        cls.BoundingBoxes = {}
