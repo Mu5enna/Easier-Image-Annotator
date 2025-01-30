@@ -58,6 +58,7 @@ class Ui_MainWindow(object):
         self.listWidget_AddedClasses = QListWidget(self.groupBox)
         self.listWidget_AddedClasses.setObjectName(u"listWidget_AddedClasses")
         self.listWidget_AddedClasses.setMaximumSize(QSize(151, 16777215))
+        self.listWidget_AddedClasses.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
 
         self.gridLayout.addWidget(self.listWidget_AddedClasses, 2, 2, 1, 2)
 

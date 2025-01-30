@@ -299,7 +299,12 @@ class MainWindow(qtw.QMainWindow):
         self.action_FillInBetweenFor = self.context_menu.addAction("Fill in Between For:")
         self.action_FillInBetweenFor.triggered.connect(self.fillInBetweenFor)
 
+        self.context_menu2 = qtw.QMenu(self)
+        self.action_DeleteClass = self.context_menu2.addAction("Delete Class")
+        self.action_DeleteClass.triggered.connect(self.delete_class)
+
         self.ui.listWidget_Frames.customContextMenuRequested.connect(self.show_context_menu)
+        self.ui.listWidget_AddedClasses.customContextMenuRequested.connect(self.show_context_menu2)
 
         self.ui.pushButton_AddTrackId.clicked.connect(self.asd)
 
@@ -322,7 +327,12 @@ class MainWindow(qtw.QMainWindow):
         # Sağ tık menüsünü, QListWidget üzerinde sağ tıklanan öğe ile konumlandır
         selected_item = self.ui.listWidget_Frames.itemAt(pos)  # Tıklanan öğe
         if selected_item:
-            self.context_menu.exec_(self.ui.listWidget_Frames.mapToGlobal(pos))
+            self.context_menu.exec(self.ui.listWidget_Frames.mapToGlobal(pos))
+
+    def show_context_menu2(self, pos):
+        selected_item2 = self.ui.listWidget_AddedClasses.itemAt(pos)
+        if selected_item2:
+            self.context_menu2.exec(self.ui.listWidget_AddedClasses.mapToGlobal(pos))
 
     def class_selected(self, changed_item):
         if changed_item.checkState() == Qt.CheckState.Checked:
@@ -335,16 +345,31 @@ class MainWindow(qtw.QMainWindow):
         pass ##trackid atama
 
 
+# TODO duplicate olanları ekleme
     @qtc.Slot()
     def add_class(self):
-        item = qtw.QListWidgetItem(selected_addclass_text)
-        item.setData(qtc.Qt.ItemDataRole.UserRole, selected_addclass_id)
-        item.setFlags(item.flags() | qtc.Qt.ItemFlag.ItemIsUserCheckable)
-        item.setCheckState(qtc.Qt.CheckState.Unchecked)
-        display_str = selected_addclass_text + " (" + str(item.data(qtc.Qt.ItemDataRole.UserRole)) + ")"
-        item.setText(display_str)
-        self.ui.listWidget_AddedClasses.addItem(item)
-        self.upd_cur_class_file(self, selected_addclass_text, selected_addclass_id, False)
+        does_contain = False
+        for data in self.ui.listWidget_AddedClasses.items():
+            if selected_addclass_id == data:
+                does_contain = True
+        if not does_contain:
+            item = qtw.QListWidgetItem(selected_addclass_text)
+            item.setData(qtc.Qt.ItemDataRole.UserRole, selected_addclass_id)
+            item.setFlags(item.flags() | qtc.Qt.ItemFlag.ItemIsUserCheckable)
+            item.setCheckState(qtc.Qt.CheckState.Unchecked)
+            display_str = selected_addclass_text + " (" + str(item.data(qtc.Qt.ItemDataRole.UserRole)) + ")"
+            item.setText(display_str)
+            self.ui.listWidget_AddedClasses.addItem(item)
+            self.upd_cur_class_file(selected_addclass_text, selected_addclass_id, False)
+        else:
+            self.message_box(qtw.QMessageBox.Icon.Information, "Existent Class", qtw.QApplication.style().standardIcon(qtw.QStyle.SP_MessageBoxInformation), "This class has already added")
+
+    @qtc.Slot()
+    def delete_class(self):
+        cid = self.ui.listWidget_AddedClasses.currentItem().data(qtc.Qt.ItemDataRole.UserRole)
+        deleted = self.ui.listWidget_AddedClasses.takeItem(self.ui.listWidget_AddedClasses.currentRow())
+        del deleted
+        self.upd_cur_class_file("non", int(cid), True)
 
     @qtc.Slot()
     def save_to_file(self):
@@ -370,12 +395,12 @@ class MainWindow(qtw.QMainWindow):
             BoundingBox.add(entry.box[0], entry.box[1], entry.box[2], entry.box[3], entry.class_id, entry.track_id )
             rect = qtc.QRect(entry.box[0], entry.box[1], (entry.box[2] - entry.box[0]), (entry.box[3] - entry.box[1]))
             rect_item = ResizableRectItem(rect)
-            rect_item.bounding_box_id = key
+            rect_item.bounding_box_id = int(key)
             self.ui.graphicsView.scene.addItem(rect_item)
 
 
     @staticmethod
-    def upd_cur_class_file(self, text: str, cid: int, is_delete: bool):
+    def upd_cur_class_file(text: str, cid: int, is_delete: bool):
         global json_path
         file_path = json_path + "/classes.txt"
         if not is_delete:
@@ -383,7 +408,18 @@ class MainWindow(qtw.QMainWindow):
                 file_input = text + " , " + str(cid) + "\n"
                 f.write(file_input)
         else:
-            pass ## deleting code
+            with open(file_path, "r") as f:
+                lines = f.readlines()
+                for line in lines:
+                    if line.strip() != "":
+                        values = [value.strip() for value in line.strip().split(',')]
+                        ftext, fcid = values
+                        if int(fcid) == cid:
+                            lines.remove(line)
+                            break
+            with open(file_path, "w") as f:
+                f.writelines(lines)
+
 
     @staticmethod
     def load_ids(self, file_path: str):
@@ -443,6 +479,15 @@ class MainWindow(qtw.QMainWindow):
             selected_addclass_text = self.ui.comboBox_Classes.currentText()
             selected_addclass_id = self.ui.comboBox_Classes.currentData()
 
+    @staticmethod
+    def message_box(icon: qtw.QMessageBox.Icon, window_title: str, bar_icon, text: str):
+        msg_box = qtw.QMessageBox()
+        msg_box.setIcon(icon)
+        msg_box.setWindowTitle(window_title)
+        msg_box.setWindowIcon(bar_icon)
+        msg_box.setText(text)
+        msg_box.exec()
+
     @qtc.Slot()
     def fileDialog(self):
         create_json = False
@@ -456,22 +501,12 @@ class MainWindow(qtw.QMainWindow):
             open(json_path + "/classes.txt", "x")
 
         except FileExistsError:
-            msg_box = qtw.QMessageBox()
-            msg_box.setIcon(qtw.QMessageBox.Icon.Information)
-            msg_box.setWindowTitle("Existent File")
-            folder_icon = qtw.QApplication.style().standardIcon(qtw.QStyle.SP_DirOpenIcon)
-            msg_box.setWindowIcon(folder_icon)
-            msg_box.setText(f"File '{json_path}' already exists")
-            msg_box.exec()
+            text = f"File '{json_path}' already exists"
+            MainWindow.message_box(qtw.QMessageBox.Icon.Information, "Existent File", qtw.QApplication.style().standardIcon(qtw.QStyle.SP_DirOpenIcon), text)
             self.load_class_file(self)
         except Exception as e:
-            msg_box = qtw.QMessageBox()
-            msg_box.setIcon(qtw.QMessageBox.Icon.Information)
-            msg_box.setWindowTitle("Error")
-            error_icon = qtw.QApplication.style().standardIcon(qtw.QStyle.SP_MessageBoxCritical)
-            msg_box.setWindowIcon(error_icon)
-            qtw.QMessageBox.text(f"Error occured: {e}")
-            msg_box.exec()
+            text = f"Error occurred: {e}"
+            MainWindow.message_box(qtw.QMessageBox.Icon.Information, "Error", qtw.QApplication.style().standardIcon(qtw.QStyle.SP_MessageBoxCritical), text)
 
         if folder:
             global imagePaths
