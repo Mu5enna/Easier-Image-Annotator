@@ -287,7 +287,7 @@ class MainWindow(qtw.QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
-        path: str = r"C:\Users\Serhat\Desktop\ids.txt"
+        path: str = r"C:\Users\Eren\Desktop\ids.txt"
         self.load_ids(self, path)
 
         # Grafik ayarları
@@ -402,8 +402,9 @@ class MainWindow(qtw.QMainWindow):
     @qtc.Slot()
     def add_class(self):
         does_contain = False
-        for data in self.ui.listWidget_AddedClasses.items(): #todo burada hata var
-            if selected_addclass_id == data:
+        for i in range(self.ui.listWidget_AddedClasses.count()):
+            item = self.ui.listWidget_AddedClasses.item(i)
+            if selected_addclass_id == item.data(qtc.Qt.ItemDataRole.UserRole):
                 does_contain = True
         if not does_contain:
             item = qtw.QListWidgetItem(selected_addclass_text)
@@ -415,7 +416,7 @@ class MainWindow(qtw.QMainWindow):
             self.ui.listWidget_AddedClasses.addItem(item)
             self.upd_cur_class_file(selected_addclass_text, selected_addclass_id, False)
         else:
-            self.message_box(qtw.QMessageBox.Icon.Information, "Existent Class", qtw.QApplication.style().standardIcon(qtw.QStyle.SP_MessageBoxInformation), "This class has already added")
+            self.message_box(qtw.QMessageBox.Icon.Information, "Existent Class", qtw.QApplication.style().standardIcon(qtw.QStyle.SP_MessageBoxWarning), "This class has already added")
 
     @qtc.Slot()
     def delete_class(self):
