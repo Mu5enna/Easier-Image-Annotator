@@ -1,4 +1,5 @@
 import os
+import pathlib
 import sys
 from pathlib import Path
 
@@ -287,7 +288,7 @@ class MainWindow(qtw.QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
-        path: str = r"C:\Users\Eren\Desktop\ids.txt"
+        path: str = str(Path.home() / "Desktop" / "ids.txt")
         self.load_ids(self, path)
 
         # Grafik ayarları
@@ -381,7 +382,7 @@ class MainWindow(qtw.QMainWindow):
         if selected_item2:
             self.context_menu2.exec(self.ui.listWidget_AddedClasses.mapToGlobal(pos))
 
-    def class_selected(self, changed_item):
+    def class_selected(self, changed_item): #todo burda classları karelere de ekle
         if changed_item.checkState() == Qt.CheckState.Checked:
             for i in range(self.ui.listWidget_AddedClasses.count()):
                 item = self.ui.listWidget_AddedClasses.item(i)
