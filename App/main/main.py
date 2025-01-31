@@ -41,6 +41,19 @@ class ResizableRectItem(qtw.QGraphicsRectItem):
         self.is_resizing = False
         self.resize_dir = None
 
+        # ID'yi göstermek için QGraphicsTextItem ekle
+        self.text_item = qtw.QGraphicsTextItem(str(self.bounding_box_id), self.scene())
+        self.text_item.setFont(qtg.QFont("Arial", 12))
+        self.text_item.setDefaultTextColor(qtg.Qt.white)
+        self.update_text_position()
+
+    def update_text_position(self):
+        """BoundingBox ID yazısını dikdörtgenin üst kenarına hizalar."""
+        rect = self.rect()
+        text_x = rect.center().x() - self.text_item.boundingRect().width() / 2
+        text_y = rect.top() - self.text_item.boundingRect().height() - 5  # Üstte biraz boşluk bırak
+        self.text_item.setPos(self.mapToScene(text_x, text_y))
+
     def hoverMoveEvent(self, event):
         cursor = qtg.Qt.ArrowCursor
         rect = self.rect()
@@ -131,6 +144,7 @@ class ResizableRectItem(qtw.QGraphicsRectItem):
             # Güncellenmiş dikdörtgeni ayarla
             self.setRect(rect.normalized())
         elif self.isSelected():  # Seçiliyse hareket ettir
+            self.update_text_position()
             super().mouseMoveEvent(event)  # Hareket ettirmek için QGraphicsItem default davranış çalışır
         else:
             return  # Seçili değilse hiçbir işlem yapılmasın
@@ -155,13 +169,14 @@ class ResizableRectItem(qtw.QGraphicsRectItem):
             print(BoundingBox.BoundingBoxes)
             main_window = qtw.QApplication.instance().activeWindow()  # Açık olan ana pencereyi al
             MainWindow.loadTrackId(main_window)
-            MainWindow.load
+            MainWindow.loadClass(main_window)
         else:
             print(f"selected box no: {self.bounding_box_id}")
 
         # Eğer yeniden boyutlandırma yapılmadıysa seçim durumu yönetimi
         if self.resize_dir is None:
             self.setSelected(True)
+        self.update_text_position()
         super().mouseReleaseEvent(event)
 
 
