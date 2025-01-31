@@ -56,3 +56,7 @@ class BoundingBox:
     def reset(cls):
         BoundingBox._id_ = 0
         cls.BoundingBoxes = {}
+
+    @classmethod
+    def getTrackId(cls,box_id):
+        return cls.BoundingBoxes[box_id].trackId

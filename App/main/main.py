@@ -153,6 +153,9 @@ class ResizableRectItem(qtw.QGraphicsRectItem):
             )
             print("Updated BoundingBox:", BoundingBox.BoundingBoxes[self.bounding_box_id])
             print(BoundingBox.BoundingBoxes)
+            main_window = qtw.QApplication.instance().activeWindow()  # Açık olan ana pencereyi al
+            MainWindow.loadTrackId(main_window)
+            MainWindow.load
         else:
             print(f"selected box no: {self.bounding_box_id}")
 
@@ -288,6 +291,7 @@ class MainWindow(qtw.QMainWindow):
         self.ui.pushButton_AddClass.clicked.connect(self.add_class)
         self.ui.listWidget_AddedClasses.itemChanged.connect(self.class_selected)
         self.ui.pushButton_Save.clicked.connect(self.save_to_file)
+        self.ui.pushButton_AddTrackId.clicked.connect(self.assign_track_id)
 
         """Context menu for frames"""
         self.context_menu = qtw.QMenu(self)
@@ -339,6 +343,18 @@ class MainWindow(qtw.QMainWindow):
             print("No BoundingBox is selected.")
             return -1
 
+    @staticmethod
+    def loadTrackId(self):
+        selected_box_id = self.getSelectedBoxId()
+        if selected_box_id >= 0:
+            track_id:int = BoundingBox.BoundingBoxes[selected_box_id].trackId
+            self.ui.spinBox_TrackId.setValue(track_id)
+            print(f"Track ID assigned to BoundingBox with id: {selected_box_id}")
+
+    @staticmethod
+    def loadClass(self):
+        pass
+
     def show_context_menu(self, pos):
         # Sağ tık menüsünü, QListWidget üzerinde sağ tıklanan öğe ile konumlandır
         selected_item = self.ui.listWidget_Frames.itemAt(pos)  # Tıklanan öğe
@@ -358,14 +374,20 @@ class MainWindow(qtw.QMainWindow):
                     item.setCheckState(Qt.CheckState.Unchecked)
 
     def assign_track_id(self):
-        pass ##trackid atama
+        selected_box_id = self.getSelectedBoxId()
+        if selected_box_id >= 0:
+            track_id:int = self.ui.spinBox_TrackId.value()
+            BoundingBox.BoundingBoxes[selected_box_id].trackId = track_id
+            print(f"Track ID assigned to BoundingBox with id: {selected_box_id}")
+            print(f"BoundingBox List: {BoundingBox.BoundingBoxes}")
+
 
 
 # TODO duplicate olanları ekleme
     @qtc.Slot()
     def add_class(self):
         does_contain = False
-        for data in self.ui.listWidget_AddedClasses.items():
+        for data in self.ui.listWidget_AddedClasses.items(): #todo burada hata var
             if selected_addclass_id == data:
                 does_contain = True
         if not does_contain:
